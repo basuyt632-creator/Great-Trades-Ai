@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Great Trades AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        :root {
+            --bg-color-dark: #0c101d;
+            --bg-color-light-dark: #161b2e;
+            --panel-color-dark: rgba(22, 27, 46, 0.5);
+            --border-color-dark: rgba(67, 81, 117, 0.3);
+            --accent-color: #2dd4bf;
+            --accent-glow: rgba(45, 212, 191, 0.2);
+            --text-primary-dark: #e2e8f0;
+            --text-secondary-dark: #94a3b8;
+
+            --bg-color-light: #f8fafc;
+            --bg-color-light-light: #ffffff;
+            --panel-color-light: rgba(255, 255, 255, 0.5);
+            --border-color-light: rgba(203, 213, 225, 0.5);
+            --text-primary-light: #0f172a;
+            --text-secondary-light: #475569;
+        }
+
+        html[data-theme='dark'] {
+            --bg-color: var(--bg-color-dark);
+            --bg-color-alt: var(--bg-color-light-dark);
+            --panel-color: var(--panel-color-dark);
+            --border-color: var(--border-color-dark);
+            --text-primary: var(--text-primary-dark);
+            --text-secondary: var(--text-secondary-dark);
+        }
+
+        html[data-theme='light'] {
+            --bg-color: var(--bg-color-light);
+            --bg-color-alt: var(--bg-color-light-light);
+            --panel-color: var(--panel-color-light);
+            --border-color: var(--border-color-light);
+            --text-primary: var(--text-primary-light);
+            --text-secondary: var(--text-secondary-light);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            background-image: 
+                radial-gradient(at 20% 80%, hsla(212,50%,30%,0.3) 0px, transparent 50%),
+                radial-gradient(at 80% 20%, hsla(165,76%,30%,0.3) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, hsla(240,30%,20%,0.3) 0px, transparent 50%);
+            animation: background-pan 20s linear infinite;
+            background-size: 200% 200%;
+        }
+
+        html[data-theme='light'] body {
+            background-image: none;
+        }
+
+        @keyframes background-pan {
+            0% { background-position: 0% 0%; }
+            25% { background-position: 100% 50%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 50%; }
+            100% { background-position: 0% 0%; }
+        }
+
+        @keyframes fade-in-up {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slide-in-down {
+            0% {
+                opacity: 0;
+                transform: translateY(-100%);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slide-in-right {
+             0% {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 10px var(--accent-glow), 0 0 20px var(--accent-glow); }
+            50% { box-shadow: 0 0 20px var(--accent-glow), 0 0 40px var(--accent-glow); }
+        }
+        
+        @keyframes toast-in {
+            from {
+                opacity: 0;
+                transform: translateY(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fade-in-up 0.6s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .animate-slide-in-down {
+            animation: slide-in-down 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .animate-slide-in-right {
+            animation: slide-in-right 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            opacity: 0;
+        }
+        
+        .animate-pulse-glow {
+             animation: pulse-glow 2s infinite ease-in-out;
+        }
+        
+        .animate-toast-in {
+            animation: toast-in 0.5s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+        }
+        
+        /* Custom scrollbar for a more modern look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.5.0/"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

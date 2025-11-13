@@ -1,0 +1,5 @@
+{
+  "name": "Great Trades AI",
+  "description": "An AI-powered trading chart analysis tool. Upload a chart image to get instant insights on market trends, buy/sell signals, and detailed analysis, powered by Google's Gemini API.",
+  "requestFramePermissions": []
+}
