@@ -81,12 +81,10 @@ export const analyzeChartImage = async (imageFile: File): Promise<AnalysisResult
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: {
-          parts: [
-            imagePart,
-            { text: "Analyze this financial trading chart in exhaustive detail, focusing on providing an accurate and comprehensive technical analysis." }
-          ]
-      },
+      contents: [
+        imagePart,
+        { text: "Analyze this financial trading chart in exhaustive detail, focusing on providing an accurate and comprehensive technical analysis." }
+      ],
       config: {
           systemInstruction: "You are an expert trading chart analyst. Your task is to analyze the provided financial chart image and return a structured JSON object with your findings. Your analysis must be extremely thorough. Scrutinize every detail, including: trend lines, support and resistance levels, key swing points (highs and lows), candlestick patterns (e.g., Doji, Hammer, Engulfing patterns), and common chart patterns (e.g., Head and Shoulders, Triangles, Flags). Based on a synthesis of all these factors, provide an objective analysis. Do not provide financial advice. The user is from India, so use simple language for confidence ('संभावित सटीकता' means 'chance of being correct'). Your goal is to provide a high-quality, detailed technical breakdown, not a guaranteed prediction.",
           responseMimeType: "application/json",
