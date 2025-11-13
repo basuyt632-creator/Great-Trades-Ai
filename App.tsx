@@ -74,6 +74,13 @@ const App: React.FC = () => {
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
+    const [timeFrame, setTimeFrame] = useState<string>('Not Specified');
+    const [userPreferences, setUserPreferences] = useState<Record<string, string>>({
+        tradingStyle: 'Not Specified',
+        primaryGoal: 'Not Specified',
+        riskTolerance: 'Not Specified',
+        investmentHorizon: 'Not Specified',
+    });
     
     const addToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
         const id = Date.now();
@@ -189,7 +196,7 @@ const App: React.FC = () => {
         setError(null);
 
         const analysisPromises = selectedFiles.map(async (selectedFile) => {
-            const result = await analyzeChartImage(selectedFile.file);
+            const result = await analyzeChartImage(selectedFile.file, timeFrame, userPreferences);
             const thumbnail = await createImageThumbnail(selectedFile.file);
             return {
                 id: Date.now() + Math.random(),
@@ -229,7 +236,7 @@ const App: React.FC = () => {
         handleClearAllImages();
         setIsLoading(false);
 
-    }, [selectedFiles, history, handleClearAllImages, addToast]);
+    }, [selectedFiles, history, handleClearAllImages, addToast, timeFrame, userPreferences]);
 
     const handleSelectHistory = useCallback((id: number) => {
         const selectedItem = history.find(item => item.id === id);
@@ -292,6 +299,10 @@ const App: React.FC = () => {
                             images={selectedFiles}
                             onAnalyze={handleAnalyze}
                             isLoading={isLoading}
+                            timeFrame={timeFrame}
+                            setTimeFrame={setTimeFrame}
+                            userPreferences={userPreferences}
+                            setUserPreferences={setUserPreferences}
                         />
                         
                         <div className="w-full">

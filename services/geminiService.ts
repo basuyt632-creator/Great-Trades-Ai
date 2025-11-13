@@ -21,7 +21,7 @@ const fileToGenerativePart = async (file: File) => {
   };
 };
 
-export const analyzeChartImage = async (imageFile: File): Promise<AnalysisResult> => {
+export const analyzeChartImage = async (imageFile: File, timeFrame: string, userPreferences: Record<string, string>): Promise<AnalysisResult> => {
   if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable is not set.");
   }
@@ -78,15 +78,28 @@ export const analyzeChartImage = async (imageFile: File): Promise<AnalysisResult
     required: ['trend', 'action', 'confidence', 'summary', 'detailedAnalysis', 'keyPatterns', 'supportLevel', 'resistanceLevel', 'swingPoints', 'candlestickAnalysis']
   };
 
+  const userContext = `
+The user has provided the following context for their analysis request:
+- Chart Time Frame: ${timeFrame}
+- Trading Style: ${userPreferences.tradingStyle || 'Not specified'}
+- Primary Goal: ${userPreferences.primaryGoal || 'Not specified'}
+- Risk Tolerance: ${userPreferences.riskTolerance || 'Not specified'}
+- Investment Horizon: ${userPreferences.investmentHorizon || 'Not specified'}
+
+Please tailor your analysis to this context. For example, if the user is a day trader on a 5-minute chart, focus on short-term signals and intraday patterns. If their goal is risk assessment, highlight potential pitfalls and stop-loss levels.
+`;
+
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: [
-        imagePart,
-        { text: "Analyze this financial trading chart in exhaustive detail, focusing on providing an accurate and comprehensive technical analysis." }
-      ],
+      contents: [{
+        parts: [
+          imagePart,
+          { text: "Analyze this financial trading chart in exhaustive detail, focusing on providing an accurate and comprehensive technical analysis." }
+        ]
+      }],
       config: {
-          systemInstruction: "You are an expert trading chart analyst. Your task is to analyze the provided financial chart image and return a structured JSON object with your findings. Your analysis must be extremely thorough. Scrutinize every detail, including: trend lines, support and resistance levels, key swing points (highs and lows), candlestick patterns (e.g., Doji, Hammer, Engulfing patterns), and common chart patterns (e.g., Head and Shoulders, Triangles, Flags). Based on a synthesis of all these factors, provide an objective analysis. Do not provide financial advice. The user is from India, so use simple language for confidence ('संभावित सटीकता' means 'chance of being correct'). Your goal is to provide a high-quality, detailed technical breakdown, not a guaranteed prediction.",
+          systemInstruction: "You are an expert trading chart analyst. Your task is to analyze the provided financial chart image and return a structured JSON object with your findings. Your analysis must be extremely thorough. Scrutinize every detail, including: trend lines, support and resistance levels, key swing points (highs and lows), candlestick patterns (e.g., Doji, Hammer, Engulfing patterns), and common chart patterns (e.g., Head and Shoulders, Triangles, Flags). Based on a synthesis of all these factors, provide an objective analysis. Do not provide financial advice. The user is from India, so use simple language for confidence ('संभावित सटीकता' means 'chance of being correct'). Your goal is to provide a high-quality, detailed technical breakdown, not a guaranteed prediction." + userContext,
           responseMimeType: "application/json",
           responseSchema: responseSchema,
       },

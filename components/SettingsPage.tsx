@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal } from './Modal';
 import { updateUserProfile, reauthenticateUser, updateUserPassword, deleteUserAccount, type User } from '../services/firebaseService';
-import { UserIcon } from './icons/UserIcon';
+import { UserIcon } from './UserIcon';
 import { LockIcon } from './icons/LockIcon';
 import { DangerIcon } from './icons/DangerIcon';
 

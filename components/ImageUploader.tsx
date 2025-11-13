@@ -8,7 +8,56 @@ interface ImageUploaderProps {
     onClearAll: () => void;
     onAnalyze: () => void;
     isLoading: boolean;
+    timeFrame: string;
+    setTimeFrame: (value: string) => void;
+    userPreferences: Record<string, string>;
+    setUserPreferences: (prefs: Record<string, string>) => void;
 }
+
+const timeFrames = ['Not Specified', '1m', '5m', '15m', '1H', '4H', '1D', '1W'];
+const questions = [
+    {
+        key: 'tradingStyle',
+        question: 'What is your trading style?',
+        options: ['Day Trader', 'Swing Trader', 'Position Trader', 'Scalper', 'Not Specified'],
+    },
+    {
+        key: 'primaryGoal',
+        question: 'What is your primary goal?',
+        options: ['Entry/Exit', 'Understand Trend', 'Find Patterns', 'Risk Assessment', 'Not Specified'],
+    },
+    {
+        key: 'riskTolerance',
+        question: 'What\'s your risk tolerance?',
+        options: ['Low', 'Medium', 'High', 'Not Specified'],
+    },
+    {
+        key: 'investmentHorizon',
+        question: 'What is your investment horizon?',
+        options: ['Short-term', 'Long-term', 'Not Specified'],
+    }
+];
+
+const PreferenceQuestion: React.FC<{ question: string, options: string[], selected: string, onSelect: (value: string) => void }> = ({ question, options, selected, onSelect }) => (
+    <div className="text-left">
+        <p className="font-medium text-text-primary mb-2">{question}</p>
+        <div className="flex flex-wrap gap-2">
+            {options.map(opt => (
+                <button
+                    key={opt}
+                    onClick={() => onSelect(opt)}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${
+                        selected === opt
+                        ? 'bg-emerald-600 text-white shadow-md' 
+                        : 'bg-bg-color-alt text-text-secondary hover:bg-slate-700 hover:text-text-primary'
+                    }`}
+                >
+                    {opt}
+                </button>
+            ))}
+        </div>
+    </div>
+);
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({ 
     onFilesSelect, 
@@ -17,8 +66,13 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     onClearAll,
     onAnalyze,
     isLoading,
+    timeFrame,
+    setTimeFrame,
+    userPreferences,
+    setUserPreferences,
 }) => {
     const [isDragging, setIsDragging] = useState(false);
+    const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
     const imageCount = images.length;
     
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,6 +93,10 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         if (e.dataTransfer.files) {
             onFilesSelect(e.dataTransfer.files);
         }
+    };
+    
+    const handlePreferenceChange = (key: string, value: string) => {
+        setUserPreferences({ ...userPreferences, [key]: value });
     };
 
     const dragDropClasses = isDragging 
@@ -89,6 +147,47 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 </div>
                 <input id="chart-upload" type="file" multiple className="hidden" accept="image/png, image/jpeg, image/webp" onChange={handleFileChange} />
             </label>
+
+            <div className="w-full space-y-4 text-left">
+                <div>
+                    <h3 className="text-lg font-semibold text-text-primary mb-3">Chart Time Frame</h3>
+                    <div className="flex flex-wrap gap-2">
+                        {timeFrames.map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setTimeFrame(t)}
+                                className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/50 ${
+                                    timeFrame === t 
+                                    ? 'bg-emerald-600 text-white shadow-md' 
+                                    : 'bg-bg-color-alt text-text-secondary hover:bg-slate-700 hover:text-text-primary'
+                                }`}
+                            >
+                                {t}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="border-t border-border-color pt-4">
+                     <button onClick={() => setIsCustomizerOpen(!isCustomizerOpen)} className="w-full flex justify-between items-center text-lg font-semibold text-text-primary">
+                        <span>Tailor Your Analysis</span>
+                         <svg className={`w-5 h-5 transition-transform duration-300 ${isCustomizerOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                    </button>
+                    {isCustomizerOpen && (
+                        <div className="mt-3 space-y-4 animate-fade-in-up" style={{animationDuration: '0.4s'}}>
+                            {questions.map(q => (
+                                <PreferenceQuestion 
+                                    key={q.key}
+                                    question={q.question}
+                                    options={q.options}
+                                    selected={userPreferences[q.key]}
+                                    onSelect={(value) => handlePreferenceChange(q.key, value)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
 
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <button

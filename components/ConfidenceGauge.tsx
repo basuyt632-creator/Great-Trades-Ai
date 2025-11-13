@@ -7,7 +7,8 @@ interface ConfidenceGaugeProps {
 export const ConfidenceGauge: React.FC<ConfidenceGaugeProps> = ({ confidence }) => {
     const [displayConfidence, setDisplayConfidence] = useState(0);
     const gaugeRef = useRef<HTMLDivElement>(null);
-    const animationFrameId = useRef<number>();
+    // Fix: Initialize useRef with null to satisfy TypeScript's requirement for an initial value and avoid ambiguity in overloads.
+    const animationFrameId = useRef<number | null>(null);
 
     useEffect(() => {
         let startTimestamp: number | null = null;
