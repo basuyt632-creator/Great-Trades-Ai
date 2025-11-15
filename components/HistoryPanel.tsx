@@ -1,13 +1,11 @@
 import React from 'react';
 import type { HistoryItem } from '../types';
 import { TradeTrend } from '../types';
-import { TrashIcon } from './icons/TrashIcon';
 import { LogoIcon } from './icons/LogoIcon';
 
 interface HistoryPanelProps {
     history: HistoryItem[];
     onSelect: (id: number) => void;
-    onClear: () => void;
 }
 
 const formatTimeAgo = (isoString: string): string => {
@@ -52,21 +50,16 @@ const HistoryItemCard: React.FC<{ item: HistoryItem, onSelect: (id: number) => v
     );
 };
 
-export const HistoryPanel: React.FC<HistoryPanelProps> = ({ history, onSelect, onClear }) => {
+export const HistoryPanel: React.FC<HistoryPanelProps> = ({ history, onSelect }) => {
     return (
         <aside id="tour-step-4" className="bg-panel-color backdrop-blur-sm border border-border-color rounded-xl p-4 sticky top-24">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-text-primary">Analysis History</h2>
-                {history.length > 0 && (
-                     <button onClick={onClear} className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-color-alt rounded-md transition-colors" aria-label="Clear history">
-                        <TrashIcon className="w-5 h-5" />
-                    </button>
-                )}
             </div>
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
                 {history.length === 0 ? (
                     <div className="text-center text-text-secondary py-8 flex flex-col items-center">
-                        <LogoIcon className="w-16 h-16 text-emerald-500/30 mb-4" />
+                        <LogoIcon className="w-16 h-16 text-[var(--accent-color)]/30 mb-4" />
                         <p className="font-semibold text-text-primary">No History Yet</p>
                         <p className="text-sm max-w-xs">Your analyzed charts will appear here for you to review later.</p>
                     </div>

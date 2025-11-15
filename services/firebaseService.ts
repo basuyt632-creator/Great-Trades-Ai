@@ -51,13 +51,11 @@ export const updateUserProfile = (user: User, profile: { displayName?: string, p
     return updateProfile(user, profile);
 };
 
-// Fix: Corrected function signature by removing extraneous 'B'.
 export const reauthenticateUser = (user: User, currentPassword: string) => {
     const credential = EmailAuthProvider.credential(user.email!, currentPassword);
     return reauthenticateWithCredential(user, credential);
 }
 
-// Fix: Corrected function signature by removing extraneous 'B'.
 export const updateUserPassword = (user: User, newPassword: string) => {
     return updatePassword(user, newPassword);
 }

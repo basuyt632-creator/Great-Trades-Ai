@@ -61,6 +61,9 @@ export const Tour: React.FC = () => {
             if (targetElement) {
                 const rect = targetElement.getBoundingClientRect();
                 setPosition({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+            } else {
+                // if target is not found, maybe skip this step or end tour
+                nextStep();
             }
         };
         
@@ -146,8 +149,8 @@ export const Tour: React.FC = () => {
             <div className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm animate-fade-in-up" style={{animationDuration: '0.3s'}} onClick={completeTour}></div>
             {!isModalStep && (
                 <div
-                    className="fixed border-2 border-emerald-500 rounded-lg shadow-2xl transition-all duration-300 z-[51] pointer-events-none"
-                    style={{ ...position, boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)' }}
+                    className="fixed border-2 border-[var(--accent-color)] rounded-lg shadow-2xl transition-all duration-300 z-[51] pointer-events-none"
+                    style={{ ...position, boxShadow: `0 0 0 9999px ${document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)'}` }}
                 ></div>
             )}
             <div
@@ -156,13 +159,13 @@ export const Tour: React.FC = () => {
                 onClick={e => e.stopPropagation()}
             >
                 {!isModalStep && <div className="absolute" style={arrowStyle}></div>}
-                <h3 className="font-bold text-lg text-emerald-400 mb-2">{currentStep.title}</h3>
+                <h3 className="font-bold text-lg text-[var(--accent-color)] mb-2">{currentStep.title}</h3>
                 <p className="text-sm text-text-primary mb-4">{currentStep.content}</p>
                 <div className="flex justify-between items-center">
                     <button onClick={completeTour} className="text-sm text-text-secondary hover:text-text-primary">Skip</button>
                     <div className="flex items-center gap-2">
                          {stepIndex > 0 && <button onClick={prevStep} className="px-3 py-1 text-sm rounded-md bg-slate-700 hover:bg-slate-600 text-white">Back</button>}
-                        <button onClick={nextStep} className="px-4 py-1 text-sm font-semibold rounded-md bg-emerald-600 hover:bg-emerald-500 text-white">
+                        <button onClick={nextStep} className="px-4 py-1 text-sm font-semibold rounded-md bg-[var(--accent-color)] hover:opacity-90 text-black">
                             {stepIndex === TOUR_STEPS.length - 1 ? 'Finish' : 'Next'}
                         </button>
                     </div>

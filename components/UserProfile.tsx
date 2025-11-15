@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { logout, type User } from '../services/firebaseService';
+import { useSettings } from '../contexts/SettingsContext';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HelpIcon } from './icons/HelpIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
+import { RestartIcon } from './icons/RestartIcon';
+
 
 interface UserProfileProps {
     user: User;
@@ -12,6 +15,7 @@ interface UserProfileProps {
 export const UserProfile: React.FC<UserProfileProps> = ({ user, onSettingsClick }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const { resetTour } = useSettings();
     
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -34,7 +38,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ user, onSettingsClick 
     const UserMenuItem: React.FC<{ icon: React.ReactNode, text: string, onClick?: () => void }> = ({ icon, text, onClick }) => (
         <button
             onClick={onClick}
-            className="w-full flex items-center gap-3 text-left px-4 py-2 text-sm text-text-primary hover:bg-emerald-600/50 hover:text-white rounded-md transition-colors"
+            className="w-full flex items-center gap-3 text-left px-4 py-2 text-sm text-text-primary hover:bg-[var(--accent-color)]/20 hover:text-text-primary rounded-md transition-colors"
         >
             {icon}
             <span>{text}</span>
@@ -43,11 +47,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({ user, onSettingsClick 
 
     return (
         <div id="tour-step-5" className="relative" ref={dropdownRef}>
-            <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-2 focus:outline-none rounded-full focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-bg-color">
+            <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-2 focus:outline-none rounded-full focus:ring-2 focus:ring-[var(--accent-color)] focus:ring-offset-2 focus:ring-offset-bg-color">
                 <img 
                     src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || user.email?.split('@')[0] || 'U'}&background=2dd4bf&color=0c101d&rounded=true`}
                     alt="User Avatar"
-                    className="w-9 h-9 rounded-full border-2 border-emerald-400/50"
+                    className="w-9 h-9 rounded-full border-2 border-[var(--accent-color)]/50"
                 />
             </button>
             
@@ -59,7 +63,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ user, onSettingsClick 
                     </div>
                     <div className="p-2 space-y-1">
                          <UserMenuItem icon={<SettingsIcon />} text="Account Settings" onClick={() => { onSettingsClick(); setIsOpen(false); }} />
-                         <a href="mailto:sujanbasu741103@gmail.com" className="w-full flex items-center gap-3 text-left px-4 py-2 text-sm text-text-primary hover:bg-emerald-600/50 hover:text-white rounded-md transition-colors">
+                         <UserMenuItem icon={<RestartIcon />} text="Restart Tour" onClick={() => { resetTour(); setIsOpen(false); }} />
+                         <a href="mailto:sujanbasu741103@gmail.com" className="w-full flex items-center gap-3 text-left px-4 py-2 text-sm text-text-primary hover:bg-[var(--accent-color)]/20 hover:text-text-primary rounded-md transition-colors">
                             <HelpIcon />
                             <span>Help Center</span>
                          </a>

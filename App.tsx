@@ -11,6 +11,9 @@ import { Login } from './components/Login';
 import { SettingsPage } from './components/SettingsPage';
 import { Toast } from './components/Toast';
 import { Tour } from './components/Tour';
+import { useSettings } from './contexts/SettingsContext';
+import { hexToHsl } from './utils/colorUtils';
+import { ErrorIcon } from './components/icons/ErrorIcon';
 
 interface SelectedFile {
     file: File;
@@ -63,25 +66,37 @@ const createImageThumbnail = (file: File): Promise<string> => {
     });
 };
 
+const fileToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+};
+
 
 const App: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [authLoading, setAuthLoading] = useState(true);
     const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+    const [analyzedImageUrl, setAnalyzedImageUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
-    const [timeFrame, setTimeFrame] = useState<string>('Not Specified');
-    const [userPreferences, setUserPreferences] = useState<Record<string, string>>({
-        tradingStyle: 'Not Specified',
-        primaryGoal: 'Not Specified',
-        riskTolerance: 'Not Specified',
-        investmentHorizon: 'Not Specified',
-    });
     
+    const { settings, isSettingsLoaded, tourKey } = useSettings();
+
+    useEffect(() => {
+        const { h, s, l } = hexToHsl(settings.accentColor);
+        document.documentElement.style.setProperty('--accent-h', `${h}`);
+        document.documentElement.style.setProperty('--accent-s', `${s}%`);
+        document.documentElement.style.setProperty('--accent-l', `${l}%`);
+    }, [settings.accentColor]);
+
     const addToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
         const id = Date.now();
         setToasts(prevToasts => [...prevToasts, { id, message, type }]);
@@ -105,7 +120,7 @@ const App: React.FC = () => {
 
     useEffect(() => {
         const historyKey = getHistoryKey();
-        if (historyKey) {
+        if (historyKey && settings.historyTrackingEnabled) {
             try {
                 const savedHistory = localStorage.getItem(historyKey);
                 if (savedHistory) {
@@ -119,13 +134,16 @@ const App: React.FC = () => {
             }
         } else {
             setHistory([]);
+            if (historyKey) {
+                localStorage.removeItem(historyKey);
+            }
         }
-    }, [user, getHistoryKey]);
+    }, [user, getHistoryKey, settings.historyTrackingEnabled]);
 
-    const updateHistory = (newHistory: HistoryItem[]) => {
+    const updateAndSaveHistory = (newHistory: HistoryItem[]) => {
+        setHistory(newHistory);
         const historyKey = getHistoryKey();
-        if(historyKey) {
-            setHistory(newHistory);
+        if(historyKey && settings.historyTrackingEnabled) {
             localStorage.setItem(historyKey, JSON.stringify(newHistory));
         }
     }
@@ -193,10 +211,11 @@ const App: React.FC = () => {
 
         setIsLoading(true);
         setAnalysisResult(null);
+        setAnalyzedImageUrl(null);
         setError(null);
 
         const analysisPromises = selectedFiles.map(async (selectedFile) => {
-            const result = await analyzeChartImage(selectedFile.file, timeFrame, userPreferences);
+            const result = await analyzeChartImage(selectedFile.file, settings);
             const thumbnail = await createImageThumbnail(selectedFile.file);
             return {
                 id: Date.now() + Math.random(),
@@ -209,23 +228,41 @@ const App: React.FC = () => {
         const results = await Promise.allSettled(analysisPromises);
         
         const newHistoryItems: HistoryItem[] = [];
+        const failedAnalyses: { reason: any }[] = [];
+
         results.forEach(res => {
-            if(res.status === 'fulfilled') {
+            if (res.status === 'fulfilled') {
                 newHistoryItems.push(res.value);
+            } else {
+                failedAnalyses.push(res);
             }
         });
 
-        const failedCount = results.length - newHistoryItems.length;
+        const failedCount = failedAnalyses.length;
 
         if (newHistoryItems.length > 0) {
-            updateHistory([...newHistoryItems, ...history]);
+            if (settings.historyTrackingEnabled) {
+                updateAndSaveHistory([...newHistoryItems, ...history]);
+            }
             setAnalysisResult(newHistoryItems[0].result);
+             try {
+                const imageUrl = await fileToDataUrl(selectedFiles[0].file);
+                setAnalyzedImageUrl(imageUrl);
+            } catch (e) {
+                console.error("Could not create image data URL for display", e);
+            }
         }
 
         if (failedCount > 0) {
-            const errorMessage = `Analyzed ${newHistoryItems.length} charts successfully. ${failedCount} analyses failed.`;
-            setError(errorMessage);
-            addToast(errorMessage, 'error');
+             if (selectedFiles.length === 1 && failedCount === 1 && failedAnalyses[0].reason instanceof Error) {
+                const specificError = failedAnalyses[0].reason.message;
+                setError(specificError);
+                addToast(specificError, 'error');
+            } else {
+                const errorMessage = `Analyzed ${newHistoryItems.length} charts successfully. ${failedCount} analyses failed.`;
+                setError(errorMessage);
+                addToast(errorMessage, 'error');
+            }
         } else {
              setError(null);
              if (newHistoryItems.length > 0) {
@@ -236,12 +273,13 @@ const App: React.FC = () => {
         handleClearAllImages();
         setIsLoading(false);
 
-    }, [selectedFiles, history, handleClearAllImages, addToast, timeFrame, userPreferences]);
+    }, [selectedFiles, history, handleClearAllImages, addToast, settings]);
 
     const handleSelectHistory = useCallback((id: number) => {
         const selectedItem = history.find(item => item.id === id);
         if (selectedItem) {
             setAnalysisResult(selectedItem.result);
+            setAnalyzedImageUrl(null);
             handleClearAllImages();
             setError(null);
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -249,11 +287,13 @@ const App: React.FC = () => {
     }, [history, handleClearAllImages]);
 
     const handleClearHistory = useCallback(() => {
-        if (window.confirm("Are you sure you want to clear all analysis history?")) {
-            updateHistory([]);
+        if (window.confirm("Are you sure you want to clear all analysis history? This action cannot be undone.")) {
+            updateAndSaveHistory([]);
+            const historyKey = getHistoryKey();
+            if(historyKey) localStorage.removeItem(historyKey);
             addToast('History cleared successfully', 'success');
         }
-    }, [updateHistory, addToast]);
+    }, [updateAndSaveHistory, addToast, getHistoryKey]);
 
     const WelcomeMessage = () => (
         <div className="text-center p-8 animate-fade-in-up">
@@ -264,14 +304,24 @@ const App: React.FC = () => {
         </div>
     );
 
-    const ErrorDisplay: React.FC<{ message: string }> = ({ message }) => (
-        <div className="w-full max-w-2xl mx-auto mt-8 bg-red-900/50 border border-red-700 rounded-xl p-6 text-center animate-fade-in-up">
-            <p className="font-bold text-red-300">Analysis Finished with Errors</p>
-            <p className="text-red-400">{message}</p>
-        </div>
-    );
+    const ErrorDisplay: React.FC<{ message: string }> = ({ message }) => {
+        const isChartNotFoundError = message.toLowerCase().includes('no chart found');
+        const isApiError = message.toLowerCase().includes('api key') || message.toLowerCase().includes('billing');
+        
+        let title = 'Analysis Error';
+        if (isChartNotFoundError) title = 'Image Not Recognized';
+        else if (isApiError) title = 'Configuration Error';
+        
+        return (
+            <div className="w-full max-w-2xl mx-auto mt-8 bg-red-900/50 border border-red-700 rounded-xl p-6 text-center animate-fade-in-up flex flex-col items-center gap-4">
+                <ErrorIcon />
+                <p className="font-bold text-red-300 text-lg">{title}</p>
+                <p className="text-red-400">{message}</p>
+            </div>
+        );
+    };
     
-    if (authLoading) {
+    if (authLoading || !isSettingsLoaded) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-bg-color">
                 <Loader message="Initializing secure session..." />
@@ -284,8 +334,8 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-bg-color text-text-primary">
-            <Tour />
+        <div className={`min-h-screen flex flex-col bg-bg-color text-text-primary ${settings.uiDensity === 'Compact' ? 'text-sm' : ''}`}>
+            <Tour key={tourKey} />
             <div className="animate-slide-in-down relative z-30">
                 <Header user={user} onSettingsClick={() => setIsSettingsOpen(true)} />
             </div>
@@ -299,16 +349,12 @@ const App: React.FC = () => {
                             images={selectedFiles}
                             onAnalyze={handleAnalyze}
                             isLoading={isLoading}
-                            timeFrame={timeFrame}
-                            setTimeFrame={setTimeFrame}
-                            userPreferences={userPreferences}
-                            setUserPreferences={setUserPreferences}
                         />
                         
                         <div className="w-full">
                             {isLoading && <Loader message={`Our AI is examining patterns, indicators, and market sentiment across ${selectedFiles.length} chart(s). This might take a moment.`} />}
                             {error && !isLoading && <ErrorDisplay message={error} />}
-                            {analysisResult && !isLoading && <AnalysisResultDisplay data={analysisResult} />}
+                            {analysisResult && !isLoading && <AnalysisResultDisplay result={analysisResult} imageUrl={analyzedImageUrl} />}
                             {!isLoading && !error && !analysisResult && <WelcomeMessage />}
                         </div>
                     </div>
@@ -316,7 +362,6 @@ const App: React.FC = () => {
                         <HistoryPanel 
                             history={history}
                             onSelect={handleSelectHistory}
-                            onClear={handleClearHistory}
                         />
                     </div>
                 </div>
@@ -328,6 +373,8 @@ const App: React.FC = () => {
             {isSettingsOpen && user && (
                 <SettingsPage 
                     user={user} 
+                    history={history}
+                    onClearHistory={handleClearHistory}
                     onClose={() => setIsSettingsOpen(false)} 
                     addToast={addToast}
                 />

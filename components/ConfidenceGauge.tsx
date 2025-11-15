@@ -7,19 +7,22 @@ interface ConfidenceGaugeProps {
 export const ConfidenceGauge: React.FC<ConfidenceGaugeProps> = ({ confidence }) => {
     const [displayConfidence, setDisplayConfidence] = useState(0);
     const gaugeRef = useRef<HTMLDivElement>(null);
-    // Fix: Initialize useRef with null to satisfy TypeScript's requirement for an initial value and avoid ambiguity in overloads.
     const animationFrameId = useRef<number | null>(null);
 
     useEffect(() => {
+        // Capture the start value from the last rendered state.
+        // This makes animations between different confidence levels smooth.
+        const startValue = displayConfidence;
+        const endValue = confidence;
+        
         let startTimestamp: number | null = null;
         const duration = 1000; // 1 second animation
-        const startValue = 0;
-        const endValue = confidence;
 
         const step = (timestamp: number) => {
             if (!startTimestamp) startTimestamp = timestamp;
             const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-            const currentValue = Math.floor(progress * (endValue - startValue) + startValue);
+            // Use Math.round for a slightly smoother animation
+            const currentValue = Math.round(progress * (endValue - startValue) + startValue);
             
             setDisplayConfidence(currentValue);
 
